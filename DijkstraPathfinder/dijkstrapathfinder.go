@@ -13,10 +13,7 @@ import (
 	"sort"
 )
 
-/*
-	The main maze solver type
-	Uses Dijkstra's Algorithm with A*
-*/
+// DijkstraPathfinder handles solving a given maze, the end points, paths and logging
 type DijkstraPathfinder struct {
 	Maze      [][]int // Stores the entire maze for local use
 	Logging   bool
@@ -25,9 +22,10 @@ type DijkstraPathfinder struct {
 	pathStack []path
 }
 
-func (this *DijkstraPathfinder) Solve() ([][]int, int) {
+// Solve beings the solving process
+func (pathfinder *DijkstraPathfinder) Solve() ([][]int, int) {
 
-	borderBreaks := this.getBorderBreaks()
+	borderBreaks := pathfinder.getBorderBreaks()
 
 	if len(borderBreaks) != 2 {
 
@@ -37,11 +35,11 @@ func (this *DijkstraPathfinder) Solve() ([][]int, int) {
 
 	}
 
-	this.xEnd = borderBreaks[1][0]
+	pathfinder.xEnd = borderBreaks[1][0]
 
-	this.yEnd = borderBreaks[1][1]
+	pathfinder.yEnd = borderBreaks[1][1]
 
-	this.pathStack = []path{
+	pathfinder.pathStack = []path{
 		path{
 			length: 0,
 			pathTo: []node{
@@ -53,41 +51,42 @@ func (this *DijkstraPathfinder) Solve() ([][]int, int) {
 		},
 	}
 
-	return this.next()
+	return pathfinder.next()
 
 }
 
-func (this *DijkstraPathfinder) getBorderBreaks() [][]int {
+// Get the points at which the maze starts and ends
+func (pathfinder *DijkstraPathfinder) getBorderBreaks() [][]int {
 
 	borderBreaks := [][]int{}
 
-	for x := 0; x < len(this.Maze[0])-1; x++ {
+	for x := 0; x < len(pathfinder.Maze[0])-1; x++ {
 
-		if this.Maze[0][x] == 0 {
+		if pathfinder.Maze[0][x] == 0 {
 
 			borderBreaks = append(borderBreaks, []int{x, 0})
 
 		}
 
-		if this.Maze[len(this.Maze)-1][x] == 0 {
+		if pathfinder.Maze[len(pathfinder.Maze)-1][x] == 0 {
 
-			borderBreaks = append(borderBreaks, []int{x, len(this.Maze) - 1})
+			borderBreaks = append(borderBreaks, []int{x, len(pathfinder.Maze) - 1})
 
 		}
 
 	}
 
-	for y := 0; y < len(this.Maze)-1; y++ {
+	for y := 0; y < len(pathfinder.Maze)-1; y++ {
 
-		if this.Maze[y][0] == 0 {
+		if pathfinder.Maze[y][0] == 0 {
 
 			borderBreaks = append(borderBreaks, []int{0, y})
 
 		}
 
-		if this.Maze[y][len(this.Maze[0])-1] == 0 {
+		if pathfinder.Maze[y][len(pathfinder.Maze[0])-1] == 0 {
 
-			borderBreaks = append(borderBreaks, []int{len(this.Maze[0]) - 1, y})
+			borderBreaks = append(borderBreaks, []int{len(pathfinder.Maze[0]) - 1, y})
 
 		}
 
@@ -97,9 +96,10 @@ func (this *DijkstraPathfinder) getBorderBreaks() [][]int {
 
 }
 
-func (this *DijkstraPathfinder) next() ([][]int, int) {
+// Test the next generation of paths
+func (pathfinder *DijkstraPathfinder) next() ([][]int, int) {
 
-	if this.pathStack[0].length == -1 {
+	if pathfinder.pathStack[0].length == -1 {
 
 		fmt.Println("No solution could be found")
 
@@ -107,63 +107,61 @@ func (this *DijkstraPathfinder) next() ([][]int, int) {
 
 	}
 
-	newPaths, endPath := this.pathStack[0].extend(this.Maze, this.xEnd, this.yEnd)
+	newPaths, endPath := pathfinder.pathStack[0].extend(pathfinder.Maze, pathfinder.xEnd, pathfinder.yEnd)
 
 	if endPath.length == -2 {
 
-		this.pathStack = append(this.pathStack, newPaths...)
+		pathfinder.pathStack = append(pathfinder.pathStack, newPaths...)
 
-		this.sortPathStack()
+		pathfinder.sortPathStack()
 
-		if this.Logging {
+		if pathfinder.Logging {
 
 			cmd := exec.Command("cmd", "/c", "cls")
 			cmd.Stdout = os.Stdout
 			cmd.Run()
 
-			fmt.Println(this.pathStack)
+			fmt.Println(pathfinder.pathStack)
 
 			fmt.Print("\n\n")
 
 		}
 
-		return this.next()
+		return pathfinder.next()
 
 	}
 
-	return endPath.getPath(), len(this.pathStack)
+	return endPath.getPath(), len(pathfinder.pathStack)
 
 }
 
 // Sort the slice of paths to have the shortest path on the top - Optimal solution
-func (this *DijkstraPathfinder) sortPathStack() {
+func (pathfinder *DijkstraPathfinder) sortPathStack() {
 
-	sort.Slice(this.pathStack, func(i, j int) bool {
-		if this.pathStack[j].length == -1 {
+	sort.Slice(pathfinder.pathStack, func(i, j int) bool {
+		if pathfinder.pathStack[j].length == -1 {
 			return true
 		}
-		if this.pathStack[i].length == -1 {
+		if pathfinder.pathStack[i].length == -1 {
 			return false
 		}
-		return this.pathStack[i].length < this.pathStack[j].length
+		return pathfinder.pathStack[i].length < pathfinder.pathStack[j].length
 	})
 
 }
 
-/*
-	Individual paths, originating from the 'start' position
-*/
+// Individual paths, originating from the 'start' position
 type path struct {
 	length int
 	pathTo []node
 }
 
 // Extend the number of routes through the maze to include the nodes of the closest adjacent nodes
-func (this *path) extend(maze [][]int, xEnd int, yEnd int) ([]path, path) {
+func (currentPath *path) extend(maze [][]int, xEnd int, yEnd int) ([]path, path) {
 
-	if this.length != -1 {
+	if currentPath.length != -1 {
 
-		adj := this.pathTo[len(this.pathTo)-1].getAdjacentNodes(maze, this.pathTo, xEnd, yEnd)
+		adj := currentPath.pathTo[len(currentPath.pathTo)-1].getAdjacentNodes(maze, currentPath.pathTo, xEnd, yEnd)
 
 		if len(adj) > 0 {
 
@@ -172,27 +170,27 @@ func (this *path) extend(maze [][]int, xEnd int, yEnd int) ([]path, path) {
 			for i := 1; i < len(adj); i++ {
 
 				newPaths = append(newPaths, path{
-					length: this.length + this.pathTo[len(this.pathTo)-1].getLength(adj[i], xEnd, yEnd),
-					pathTo: make([]node, len(this.pathTo)),
+					length: currentPath.length + currentPath.pathTo[len(currentPath.pathTo)-1].getLength(adj[i], xEnd, yEnd),
+					pathTo: make([]node, len(currentPath.pathTo)),
 				})
 
-				copy(newPaths[len(newPaths)-1].pathTo, this.pathTo)
+				copy(newPaths[len(newPaths)-1].pathTo, currentPath.pathTo)
 
 				newPaths[len(newPaths)-1].pathTo = append(newPaths[len(newPaths)-1].pathTo, adj[i])
 
 			}
 
-			this.pathTo = append(this.pathTo, adj[0])
+			currentPath.pathTo = append(currentPath.pathTo, adj[0])
 
-			this.length += this.pathTo[len(this.pathTo)-1].getLength(adj[0], xEnd, yEnd)
+			currentPath.length += currentPath.pathTo[len(currentPath.pathTo)-1].getLength(adj[0], xEnd, yEnd)
 
-			lastNode := this.pathTo[len(this.pathTo)-1]
+			lastNodeInPath := currentPath.pathTo[len(currentPath.pathTo)-1]
 
-			endPath := path{length: -2}
+			endPath := path{length: -2} // An of 'path' with a length of -2 simply denotes the maze has not been solved
 
-			if lastNode.xPos == xEnd && lastNode.yPos == yEnd {
+			if lastNodeInPath.xPos == xEnd && lastNodeInPath.yPos == yEnd {
 
-				endPath = *this
+				endPath = *currentPath
 
 			}
 
@@ -200,9 +198,9 @@ func (this *path) extend(maze [][]int, xEnd int, yEnd int) ([]path, path) {
 
 				for i := 0; i < len(newPaths); i++ {
 
-					lastNode = newPaths[i].pathTo[len(this.pathTo)-1]
+					lastNodeInPath = newPaths[i].pathTo[len(currentPath.pathTo)-1]
 
-					if lastNode.xPos == xEnd && lastNode.yPos == yEnd {
+					if lastNodeInPath.xPos == xEnd && lastNodeInPath.yPos == yEnd {
 
 						endPath = newPaths[i]
 
@@ -218,19 +216,19 @@ func (this *path) extend(maze [][]int, xEnd int, yEnd int) ([]path, path) {
 
 		}
 
-		this.length = -1
+		currentPath.length = -1
 
 	}
 
-	return []path{}, path{length: -2}
+	return []path{}, path{length: -2} // An of 'path' with a length of -2 simply denotes the maze has not been solved
 
 }
 
-func (this *path) getPath() [][]int {
+func (currentPath *path) getPath() [][]int {
 
 	pathTo := [][]int{}
 
-	for _, currentNode := range this.pathTo {
+	for _, currentNode := range currentPath.pathTo {
 
 		pathTo = append(pathTo, []int{currentNode.xPos, currentNode.yPos})
 
@@ -240,18 +238,16 @@ func (this *path) getPath() [][]int {
 
 }
 
-/*
-	Junction points; one or more turns can be made
-*/
+// Junction points; one or more turns can be made
 type node struct {
 	xPos int
 	yPos int
 }
 
 // Search for nodes that can be reached on a straight path
-func (this *node) getAdjacentNodes(maze [][]int, currentPath []node, xEnd int, yEnd int) []node {
+func (currentNode *node) getAdjacentNodes(maze [][]int, currentPath []node, xEnd int, yEnd int) []node {
 
-	directionsToTry := this.getDirectionsToTry(len(maze)-1, currentPath)
+	directionsToTry := currentNode.getDirectionsToTry(len(maze)-1, currentPath)
 
 	newNodes := []node{}
 
@@ -259,24 +255,24 @@ func (this *node) getAdjacentNodes(maze [][]int, currentPath []node, xEnd int, y
 
 		for i := 0; i < len(maze)-1; i++ {
 
-			if this.canMove(maze, directionToMove) {
+			if currentNode.canMove(maze, directionToMove) {
 
-				if this.xPos+directionToMove.XDirection == xEnd && this.yPos+directionToMove.YDirection == yEnd {
+				if currentNode.xPos+directionToMove.XDirection == xEnd && currentNode.yPos+directionToMove.YDirection == yEnd {
 
 					newNodes = append(newNodes, node{
-						xPos: this.xPos + directionToMove.XDirection,
-						yPos: this.yPos + directionToMove.YDirection,
+						xPos: currentNode.xPos + directionToMove.XDirection,
+						yPos: currentNode.yPos + directionToMove.YDirection,
 					})
 
 					return newNodes
 
 				}
 
-				if this.nodeIsPresent(maze, directionToMove) {
+				if currentNode.nodeIsPresent(maze, directionToMove) {
 
 					newNodes = append(newNodes, node{
-						xPos: this.xPos + directionToMove.XDirection,
-						yPos: this.yPos + directionToMove.YDirection,
+						xPos: currentNode.xPos + directionToMove.XDirection,
+						yPos: currentNode.yPos + directionToMove.YDirection,
 					})
 
 					break
@@ -299,12 +295,12 @@ func (this *node) getAdjacentNodes(maze [][]int, currentPath []node, xEnd int, y
 
 }
 
-// Look for a possible change in direction
-func (this *node) nodeIsPresent(maze [][]int, directionToMove Direction) bool {
+// Look for a possible change in direction at the current position
+func (currentNode *node) nodeIsPresent(maze [][]int, directionToMove Direction) bool {
 
 	tempNode := node{
-		xPos: this.xPos + directionToMove.XDirection,
-		yPos: this.yPos + directionToMove.YDirection,
+		xPos: currentNode.xPos + directionToMove.XDirection,
+		yPos: currentNode.yPos + directionToMove.YDirection,
 	}
 
 	if directionToMove.XDirection != 0 {
@@ -317,25 +313,23 @@ func (this *node) nodeIsPresent(maze [][]int, directionToMove Direction) bool {
 			YDirection: -1,
 		})
 
-	} else {
-
-		return tempNode.canMove(maze, Direction{
-			XDirection: 1,
-			YDirection: 0,
-		}) || tempNode.canMove(maze, Direction{
-			XDirection: -1,
-			YDirection: 0,
-		})
-
 	}
+
+	return tempNode.canMove(maze, Direction{
+		XDirection: 1,
+		YDirection: 0,
+	}) || tempNode.canMove(maze, Direction{
+		XDirection: -1,
+		YDirection: 0,
+	})
 
 }
 
-func (this *node) canMove(maze [][]int, directionToMove Direction) bool {
+func (currentNode *node) canMove(maze [][]int, directionToMove Direction) bool {
 
-	targetX := this.xPos + directionToMove.XDirection
+	targetX := currentNode.xPos + directionToMove.XDirection
 
-	targetY := this.yPos + directionToMove.YDirection
+	targetY := currentNode.yPos + directionToMove.YDirection
 
 	if targetY == -1 || targetX == -1 || targetY == len(maze) || targetX == len(maze[0]) {
 
@@ -347,7 +341,7 @@ func (this *node) canMove(maze [][]int, directionToMove Direction) bool {
 
 }
 
-func (this *node) getDirectionsToTry(mazeLength int, currentPath []node) []Direction {
+func (currentNode *node) getDirectionsToTry(mazeLength int, currentPath []node) []Direction {
 
 	directionsToTry := []Direction{}
 
@@ -380,14 +374,14 @@ func (this *node) getDirectionsToTry(mazeLength int, currentPath []node) []Direc
 
 		previousNode := currentPath[len(currentPath)-2]
 
-		if this.xPos-previousNode.xPos != 0 {
+		if currentNode.xPos-previousNode.xPos != 0 {
 
 			directionsToTry = append(directionsToTry, []Direction{
 				Direction{0, 1},  // Down
 				Direction{0, -1}, // Up
 			}...)
 
-			if this.xPos-previousNode.xPos > 0 { // If true, don't move to the left
+			if currentNode.xPos-previousNode.xPos > 0 { // If true, don't move to the left
 
 				directionsToTry = append(directionsToTry, []Direction{
 					Direction{1, 0}, // Right
@@ -408,7 +402,7 @@ func (this *node) getDirectionsToTry(mazeLength int, currentPath []node) []Direc
 				Direction{-1, 0}, // Left
 			}...)
 
-			if this.yPos-previousNode.yPos > 0 { // If true, don't move upwards
+			if currentNode.yPos-previousNode.yPos > 0 { // If true, don't move upwards
 
 				directionsToTry = append(directionsToTry, []Direction{
 					Direction{0, 1}, // Down
@@ -430,41 +424,44 @@ func (this *node) getDirectionsToTry(mazeLength int, currentPath []node) []Direc
 
 }
 
-func (this *node) getLength(adjNode node, xEnd int, yEnd int) int {
+// Get the distance between the current node an a given adjacent node
+func (currentNode *node) getLength(adjNode node, xEnd int, yEnd int) int {
 	// The absolute value of Dx + Dy
-	return int(math.Abs(float64(adjNode.xPos-this.xPos))+math.Abs(float64(adjNode.xPos-this.xPos))) +
+	return int(math.Abs(float64(adjNode.xPos-currentNode.xPos))+math.Abs(float64(adjNode.xPos-currentNode.xPos))) +
 		int(math.Abs(float64(xEnd-adjNode.xPos))+math.Abs(float64(yEnd-adjNode.yPos)))
 
 }
 
+// Direction represents the X and Y values to be travelled in
 type Direction struct {
 	XDirection int
 	YDirection int
 }
 
-func (this *Direction) Increment() {
+// Increment moves the current direction further away from it's point of origin
+func (currentDirection *Direction) Increment() {
 
-	if this.XDirection == 0 {
+	if currentDirection.XDirection == 0 {
 
-		if this.YDirection > 0 {
+		if currentDirection.YDirection > 0 {
 
-			this.YDirection += 1
+			currentDirection.YDirection++
 
 		} else {
 
-			this.YDirection -= 1
+			currentDirection.YDirection--
 
 		}
 
 	} else {
 
-		if this.XDirection > 0 {
+		if currentDirection.XDirection > 0 {
 
-			this.XDirection += 1
+			currentDirection.XDirection++
 
 		} else {
 
-			this.XDirection -= 1
+			currentDirection.XDirection--
 
 		}
 
@@ -472,34 +469,35 @@ func (this *Direction) Increment() {
 
 }
 
-func (this *Direction) Decrement() bool {
+// Decrement moves the current direction towards being X: 0, Y: 0
+func (currentDirection *Direction) Decrement() bool {
 
-	if this.XDirection == 0 {
+	if currentDirection.XDirection == 0 {
 
-		if this.YDirection > 0 {
+		if currentDirection.YDirection > 0 {
 
-			this.YDirection -= 1
+			currentDirection.YDirection--
 
 		} else {
 
-			this.YDirection += 1
+			currentDirection.YDirection++
 
 		}
 
 	} else {
 
-		if this.XDirection > 0 {
+		if currentDirection.XDirection > 0 {
 
-			this.XDirection -= 1
+			currentDirection.XDirection--
 
 		} else {
 
-			this.XDirection += 1
+			currentDirection.XDirection++
 
 		}
 
 	}
 
-	return !(this.XDirection == 0 && this.YDirection == 0)
+	return !(currentDirection.XDirection == 0 && currentDirection.YDirection == 0)
 
 }
