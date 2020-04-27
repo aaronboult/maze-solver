@@ -32,7 +32,7 @@ func main() {
 
 	maze := loadMaze(mazeName)
 
-	solver := dijkstrapathfinder.DijkstraPathfinder{Maze: maze, Logging: showNumericalSolution}
+	solver := dijkstrapathfinder.DijkstraPathfinder{Maze: maze, Logging: showNumericalSolution} // Logging dictates whether to show the live path stack while pathfinding
 
 	fmt.Println("Solving maze using Dijkstra's Pathfinder algorithm...")
 
@@ -48,9 +48,7 @@ func main() {
 
 	if !preventOutputMaze {
 
-		solutionImage := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{len(maze[0]), len(maze)}})
-
-		var colorToSet color.Color
+		solutionImage := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{len(maze[0]), len(maze)}}) // Create a new blank image the same size as the given maze
 
 		for y := 0; y < len(maze); y++ {
 
@@ -58,19 +56,17 @@ func main() {
 
 				if maze[y][x] == 1 {
 
-					colorToSet = color.Black
+					solutionImage.Set(x, y, color.Black)
 
 				} else {
 
-					colorToSet = color.White
+					solutionImage.Set(x, y, color.White)
 
 				}
 
-				solutionImage.Set(x, y, colorToSet)
-
 			}
 
-		}
+		} // Copy the given maze image to the newly created image
 
 		red := color.RGBA{0xff, 0, 0, 0xff}
 
@@ -93,7 +89,7 @@ func main() {
 
 			}
 
-		}
+		} // Draw the red path line on the newly created image
 
 		fmt.Printf("Creating maze solution: %s\n", outputName)
 
@@ -113,7 +109,8 @@ func loadMaze(mazeName string) [][]int {
 
 	var maze [][]int = [][]int{}
 
-	var r uint32
+	var r uint32 // The red value in the image - used to determine whether a pixel is black or white
+				 // 0 represents white, 1 represents black
 
 	for rowIndex := 0; rowIndex < img.Bounds().Dy(); rowIndex++ {
 
